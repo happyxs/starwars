@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yoda Wars</title>
+  <link href="https://fonts.cdnfonts.com/css/star-wars" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      font-family: 'Star Wars', sans-serif;
+      background: black;
+      color: white;
+    }
+    canvas {
+      background: black;
+      display: block;
+    }
+    .floating-score {
+      position: absolute;
+      color: #00ffcc;
+      font-size: 20px;
+      animation: floatUp 1s ease-out;
+      pointer-events: none;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-50px); }
+    }
+    #crawl {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: black;
+      display: none;
+      z-index: 10;
+      color: yellow;
+      text-align: center;
+    }
+    .crawl-text {
+      font-size: 20px;
+      width: 80%;
+      margin: 0 auto;
+      animation: crawl 60s linear forwards;
+      transform: rotateX(25deg);
+      font-family: 'Star Wars', sans-serif;
+    }
+    @keyframes crawl {
+      0% { transform: translateY(100%) rotateX(25deg); }
+      100% { transform: translateY(-300%) rotateX(25deg); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="crawl">
+    <div class="crawl-text">
+<h2>STAR WARS: O AMOR DA GALÁXIA</h2>
+<p>Em uma galáxia distante...</p>
+<p>Mestre Yoda embarcou em uma jornada épica, enfrentando tempestades do Império para proteger o mais poderoso sentimento do universo:</p>
+<p>O AMOR.</p>
+<p>Contra todos os soldados e até mesmo Palpatine, ele lutou com bravura.</p>
+<p>Mas sua verdadeira missão não era vencer batalhas...</p>
+<p>Era declarar, diante de todas as estrelas:</p>
+<p><strong>Débora, você é a Força que move minha galáxia. 💙</strong></p>
+<p>Este presente foi criado com carinho para seu tio,</p>
+<p>como um lembrete de que o amor vence qualquer escuridão.</p>
+<p>Que a Força esteja com vocês. Sempre.</p>
+
+      <h2>Star Wars: O Amor da Galáxia</h2>
+      <p>Após uma longa jornada, Mestre Yoda enfrentou as forças do Império para provar que a Força também está no coração.</p>
+     <p>Derrotando stormtroopers voadores e soldados terrestres, ele enfim encarou Palpatine em uma última missão: provar o poder do amor.</p>
+     <p>Tudo isso... por Débora, a moça mais poderosa da galáxia 💙</p>
+     <p>Este jogo foi feito com carinho para seu tio, como forma de mostrar que a força do amor atravessa galáxias!</p>
+     <p>Que a Força esteja com vocês, sempre.</p>
+    </div>
+  </div>
+
+  <script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const yodaRunImg = new Image();
+  yodaRunImg.src = 'img/y1.png';
+  const yodaAttackImg = new Image();
+  yodaAttackImg.src = 'img/y2.png';
+  const stormImg = new Image();
+  stormImg.src = 'img/st2.png';
+  const stormFlyImg = new Image();
+  stormFlyImg.src = 'img/st1.png';
+  const palpatineImg = new Image();
+  palpatineImg.src = 'img/p.png';
+
+  const slashSound = document.createElement('audio'); slashSound.src = 'audio/light.mp3'; slashSound.load();
+  const themeMusic = new Audio('audio/theme.mp3');
+
+  let stars = Array.from({length: 100}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: Math.random() * 2
+  }));
+
+  let yoda = {
+    x: 100,
+    y: canvas.height - 180,
+    width: 90,
+    height: 90,
+    isAttacking: false,
+    velocityY: 0,
+    jumpForce: -15,
+    gravity: 0.7,
+    grounded: true
+  };
+
+  let enemies = [];
+let palpatineSpawned = false;
+  let score = 0;
+  let gameOver = false;
+  let showFinal = false;
+
+  function spawnEnemy() {
+    if (score >= 20 && !palpatineSpawned) {
+      enemies.push({
+        x: canvas.width,
+        y: canvas.height - 180,
+        width: 90,
+        height: 90,
+        type: 'palpatine',
+        explosion: false,
+        explosionTime: 0,
+        opacity: 1
+      });
+      palpatineSpawned = true;
+    } else if (score < 20) {
+      let isFlying = Math.random() > 0.5;
+      let enemy = {
+        x: canvas.width,
+        y: isFlying ? canvas.height - 300 : canvas.height - 180,
+        width: 90,
+        height: 90,
+        type: isFlying ? 'stormFly' : 'storm',
+        explosion: false,
+        explosionTime: 0,
+        opacity: 1
+      };
+      enemies.push(enemy);
+    }
+  }
+    let isFlying = Math.random() > 0.5;
+    let enemy = {
+      x: canvas.width,
+      y: isFlying ? canvas.height - 300 : canvas.height - 180,
+      width: 90,
+      height: 90,
+      type: (score >= 19 && enemies.length === 0) ? 'palpatine' : (isFlying ? 'stormFly' : 'storm'),
+      explosion: false,
+      explosionTime: 0,
+      opacity: 1
+    };
+    enemies.push(enemy);
+
+
+  function drawStars() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    stars.forEach(star => {
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+      ctx.fill();
+      star.x -= 0.5;
+      if (star.x < 0) {
+        star.x = canvas.width;
+        star.y = Math.random() * canvas.height;
+      }
+    });
+  }
+
+  function drawYoda() {
+    const img = yoda.isAttacking ? yodaAttackImg : yodaRunImg;
+    ctx.drawImage(img, yoda.x, yoda.y, yoda.width, yoda.height);
+  }
+
+  function drawEnemies() {
+    enemies.forEach(enemy => {
+      ctx.save();
+      ctx.globalAlpha = enemy.opacity;
+      if (enemy.explosion) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(enemy.x + 45, enemy.y + 45, 30, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const img = enemy.type === 'palpatine' ? palpatineImg :
+                    enemy.type === 'stormFly' ? stormFlyImg : stormImg;
+        ctx.drawImage(img, enemy.x, enemy.y, enemy.width, enemy.height);
+      }
+      ctx.restore();
+    });
+  }
+
+  function handleJump() {
+    if (yoda.grounded) {
+      yoda.velocityY = yoda.jumpForce;
+      yoda.grounded = false;
+    }
+  }
+
+  function showScorePopup(x, y) {
+    let popup = document.createElement('div');
+    popup.className = 'floating-score';
+    popup.style.left = `${x - 20}px`;
+    popup.style.top = `${y - 20}px`;
+    popup.textContent = '+1';
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 1000);
+  }
+
+  function update() {
+    drawStars();
+    if (gameOver) return;
+
+    yoda.y += yoda.velocityY;
+    yoda.velocityY += yoda.gravity;
+    if (yoda.y > canvas.height - 180) {
+      yoda.y = canvas.height - 180;
+      yoda.velocityY = 0;
+      yoda.grounded = true;
+    }
+
+    enemies.forEach((enemy, i) => {
+      if (!enemy.explosion) enemy.x -= 6;
+
+      if (!enemy.explosion &&
+          yoda.x < enemy.x + enemy.width &&
+          yoda.x + yoda.width > enemy.x &&
+          yoda.y < enemy.y + enemy.height &&
+          yoda.y + yoda.height > enemy.y) {
+
+        if (yoda.isAttacking) {
+          enemy.explosion = true;
+          enemy.explosionTime = Date.now();
+          slashSound.play();
+          score++;
+          showScorePopup(enemy.x, enemy.y);
+        } else {
+          gameOver = true;
+          themeMusic.play();
+          document.getElementById('restartBtn').style.display = 'block';
+        }
+      }
+
+      if (enemy.explosion) {
+        enemy.opacity -= 0.05;
+      }
+
+      if ((enemy.explosion && Date.now() - enemy.explosionTime > 400) || enemy.opacity <= 0) {
+        enemies.splice(i, 1);
+      }
+
+      if (enemy.x + enemy.width < 0) enemies.splice(i, 1);
+    });
+
+    drawYoda();
+    drawEnemies();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px Star Wars';
+    ctx.fillText(`Score: ${score}`, 20, 30);
+
+    if (score >= 20 && !showFinal) {
+      document.getElementById('crawl').style.display = 'block';
+      themeMusic.play();
+      showFinal = true;
+      setTimeout(() => location.reload(), 30000);
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  setInterval(spawnEnemy, 1500);
+  update();
+
+  window.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (yoda.grounded) handleJump();
+    yoda.isAttacking = true;
+    setTimeout(() => yoda.isAttacking = false, 500);
+  }, { passive: false });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      if (yoda.grounded) handleJump();
+      yoda.isAttacking = true;
+      setTimeout(() => yoda.isAttacking = false, 500);
+    }
+    document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+    document.getElementById('restartBtn').addEventListener('touchstart', () => location.reload());
+
+
+  });
+  </script>
+  <button id="restartBtn">Jogar Novamente</button>
+<style>
+  #restartBtn {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    font-size: 18px;
+    font-family: 'Star Wars', sans-serif;
+    background-color: #222;
+    color: yellow;
+    border: 2px solid yellow;
+    border-radius: 8px;
+    cursor: pointer;
+    display: none;
+    z-index: 20;
+  }
+  #restartBtn:active {
+    transform: translateX(-50%) scale(0.98);
+  }
+</style>
+
+</body>
+</html>
