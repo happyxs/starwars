@@ -110,8 +110,8 @@
   let yoda = {
     x: 100,
     y: canvas.height - 180,
-    width: 90,
-    height: 90,
+    width: 200,
+    height: 200,
     isAttacking: false,
     velocityY: 0,
     jumpForce: -15,
@@ -130,21 +130,21 @@ let palpatineSpawned = false;
       enemies.push({
         x: canvas.width,
         y: canvas.height - 180,
-        width: 90,
-        height: 90,
+        width: 200,
+        height: 200,
         type: 'palpatine',
         explosion: false,
         explosionTime: 0,
         opacity: 1
       });
       palpatineSpawned = true;
-    } else if (score < 20) {
+    } else if (score < 21) {
       let isFlying = Math.random() > 0.5;
       let enemy = {
         x: canvas.width,
         y: isFlying ? canvas.height - 300 : canvas.height - 180,
-        width: 90,
-        height: 90,
+        width: 200,
+        height: 200,
         type: isFlying ? 'stormFly' : 'storm',
         explosion: false,
         explosionTime: 0,
@@ -329,6 +329,17 @@ let palpatineSpawned = false;
     transform: translateX(-50%) scale(0.98);
   }
 </style>
+<script> 
+const restartBtn = document.getElementById('restartBtn');
 
+restartBtn.addEventListener('click', () => {
+  location.reload();
+});
+
+restartBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault(); 
+  location.reload();
+}, { passive: false });
+</script>
 </body>
 </html>
